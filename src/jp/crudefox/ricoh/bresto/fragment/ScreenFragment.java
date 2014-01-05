@@ -1,10 +1,18 @@
 package jp.crudefox.ricoh.bresto.fragment;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import jp.crudefox.ricoh.bresto.AppManager;
 import jp.crudefox.ricoh.bresto.GraphicsThread;
 import jp.crudefox.ricoh.bresto.R;
+import jp.crudefox.ricoh.bresto.chikara.manager.CFConst;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
 import jp.crudefox.tunacan.chikara.util.CFUtil;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -13,12 +21,14 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Picture;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextPaint;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,6 +36,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -37,7 +49,6 @@ import com.actionbarsherlock.app.SherlockFragment;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
-import com.strumsoft.websocket.phonegap.WebSocketFactory;
 
 
 /**
@@ -83,6 +94,12 @@ public class ScreenFragment extends SherlockFragment{
 	//private DeleteContributeTask mDelTask;
 
 	private Bitmap mBmp;
+
+
+	private WebSocketClient mClient;
+
+
+
 
 
 	public ScreenFragment() {
@@ -197,6 +214,7 @@ public class ScreenFragment extends SherlockFragment{
 		mBtn2.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				stopScreen();
 				stopGraphics();
 			}
 		});
@@ -247,23 +265,163 @@ public class ScreenFragment extends SherlockFragment{
 //			}
 //		});
 
+
+
+
+
+
+
+
+
+
 		WebSettings settings =mWebView.getSettings();
+
+		settings.setUserAgentString("bresto");
+
 		settings.setJavaScriptEnabled(true);
 
 		mWebView.setWebViewClient(new MyWebViewClient());
 		mWebView.setWebChromeClient(new MyWebVieChrome());
 
-		mWebView.addJavascriptInterface(new WebSocketFactory(new Handler(),mWebView), "WebSocketFactory");
+		//mWebView.addJavascriptInterface(new WebSocketFactory(mWebView), "WebSocketFactory");
 
 		//mWebView.loadUrl("https://google.com");
-		//mWebView.loadUrl("http://192.168.1.122/bresto/");
-		//mWebView.loadUrl("http://www.websocket.org/echo.html");
-		mWebView.loadUrl("http://bresto.cloudapp.net:8080/BreStoServer0/");
 
+		//mWebView.loadUrl("http://www.websocket.org/echo.html");
+		//mWebView.loadUrl("http://bresto.cloudapp.net:8080/BreStoServer0/");
 
 		return mRootView;
 
 	}
+
+
+
+	public void startWebView(){
+
+		LoginInfo li = mApp.getLoginInfo();
+		if(li==null) return ;
+
+		CookieSyncManager.createInstance(getApplicationContext());
+        CookieSyncManager.getInstance().startSync();
+        CookieManager.getInstance().setAcceptCookie(true);
+        CookieManager.getInstance().removeExpiredCookie();
+
+//		CookieStore cookieStr = httpClient.getCookieStore();
+//        cookieStr.clearExpired(new java.util.Date());
+//        List<Cookie> cookies = cookieStr.getCookies();
+        CookieManager cookieManager = CookieManager.getInstance();
+//        for (Cookie cookie : cookies) {
+//            String cookieString = cookie.getName() + "=" + cookie.getValue();
+//            Log.d(TAG, "cookieString="+cookieString);
+//            cookieManager.setCookie("nicovideo.jp", cookieString);
+//            CookieSyncManager.getInstance().sync();
+//            System.out.println(cookie.getValue());
+//            System.out.println(cookie.getDomain());
+//            System.out.println("HOSI3");
+//        }
+
+        String cookieString = "JSESSIONID=" + li.getToken().getSessionID();
+        cookieManager.setCookie(CFConst.DOMAIN, cookieString);
+        CookieSyncManager.getInstance().sync();
+
+
+		//mWebView.loadUrl("http://192.168.1.122/bresto/");
+        mWebView.loadUrl(CFConst.SERVER+CFConst.ROOTDIR+"play.html");
+	}
+
+
+	private void initWebSocket(){
+
+		 URI uri = null;
+		try {
+			uri = new URI("ws://192.168.1.117:8080/BreStoServer0/api/socket_node_edge");
+		} catch (URISyntaxException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
+
+        mClient = new WebSocketClient(uri) {
+            @Override
+            public void onOpen(ServerHandshake handshake) {
+                //Log.d(TAG, "onOpen");
+	           	 CFUtil.Log("onOpen");
+	           	 Runnable r = new Runnable() {
+					@Override
+					public void run() {
+			           	 String script = "javascript: fakeWebSocket.open();";
+			           	 mWebView.loadUrl(script);
+					}
+				};
+				mHandler.post(r);
+            }
+
+            @Override
+            public void onMessage(final String message) {
+           	 CFUtil.Log("onMessage "+message);
+                //Log.d(TAG, "onMessage");
+                //Log.d(TAG, "Message:" + message);
+//                mHandler.post(new Runnable() {    // ----2
+//                    @Override
+//                    public void run() {
+//                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+
+	           	 Runnable r = new Runnable() {
+					@Override
+					public void run() {
+			           	 String script = "javascript: var str = '"+ message +"'; fakeWebSocket.message(str);";
+			           	 mWebView.loadUrl(script);
+					}
+				};
+				mHandler.post(r);
+            }
+
+            @Override
+            public void onError(Exception ex) {
+                //Log.d(TAG, "onError");
+                ex.printStackTrace();
+
+                Runnable r = new Runnable() {
+					@Override
+					public void run() {
+		              	 String script = "javascript: fakeWebSocket.error();";
+		               	 mWebView.loadUrl(script);
+					}
+				};
+ 				mHandler.post(r);
+            }
+
+            @Override
+            public void onClose(int code, String reason, boolean remote) {
+	                //Log.d(TAG, "onClose");
+	           	 CFUtil.Log("onClose");
+
+	           	 Runnable r = new Runnable() {
+					@Override
+					public void run() {
+			           	 String script = "javascript: fakeWebSocket.close();";
+			           	 mWebView.loadUrl(script);
+					}
+				};
+				mHandler.post(r);
+            }
+        };
+
+        mClient.connect();
+
+
+	}
+
+
+	private void destroyWebSocket(){
+
+		if(mClient!=null){
+			mClient.close();
+		}
+
+	}
+
 
 	private class MyWebViewClient extends WebViewClient {
 	    @Override
@@ -280,6 +438,14 @@ public class ScreenFragment extends SherlockFragment{
 	        return true;
 	    }
 
+		@Override
+		@Deprecated
+		public void onConsoleMessage(String message, int lineNumber, String sourceID) {
+			// TODO 自動生成されたメソッド・スタブ
+			super.onConsoleMessage(message, lineNumber, sourceID);
+	        //CFUtil.Log(  cm.message() + "--From line " + cm.lineNumber() + " of " + cm.sourceId() );
+		}
+
 	}
 
 
@@ -289,7 +455,10 @@ public class ScreenFragment extends SherlockFragment{
 	private void startGraphics(){
 		if( mGraTh !=null ) return ;
 
-		GraphicsThread t = mGraTh = new GraphicsThread(mBmp.getWidth(), mBmp.getHeight());
+		String ip = mApp.getSelectProjectorIp();
+		if(TextUtils.isEmpty(ip)) return ;
+
+		GraphicsThread t = mGraTh = new GraphicsThread(mBmp.getWidth(), mBmp.getHeight(), ip);
 		t.start();
 
 	}
@@ -306,12 +475,15 @@ public class ScreenFragment extends SherlockFragment{
 		ScreenThread t = mScreenThread = new ScreenThread();
 		t.start();
 
+		initWebSocket();
 	}
 	private void stopScreen(){
 		ScreenThread t = mScreenThread;
 		if(t == null) return ;
 		t.cancel();
 		mScreenThread = null;
+
+		destroyWebSocket();
 	}
 
 
@@ -324,7 +496,7 @@ public class ScreenFragment extends SherlockFragment{
 		//mDateFormat = DateFormat.getInstance();
 		mApp = (AppManager) getActivity().getApplication();
 
-		mBmp = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
+		mBmp = Bitmap.createBitmap(960, 960, Bitmap.Config.ARGB_4444);
 
 	}
 
@@ -387,56 +559,68 @@ public class ScreenFragment extends SherlockFragment{
 			int roop_count = 0;
 			while(!mmIsCanceld){
 
-				System.out.println("suggest roop_count = "+roop_count);
+				//System.out.println("suggest roop_count = "+roop_count);
+
+				Runnable r = new Runnable() {
+					@Override
+					public void run() {
+
+						draw_label : {
+
+						Bitmap bmp = mBmp;
+						Canvas cv = new Canvas(bmp);
+
+						TextPaint tp = new TextPaint();
+						tp.setTextSize(19);
+						tp.setColor(Color.argb(255, 0,0,0));
 
 
-				draw_label : {
+						cv.drawARGB(255, 255, 255, 255);
 
-					Bitmap bmp = mBmp;
-					Canvas cv = new Canvas(bmp);
+						//mWebView.draw(cv);
 
-					TextPaint tp = new TextPaint();
-					tp.setTextSize(19);
-					tp.setColor(Color.argb(255, 0,0,0));
+						{
+							Picture pic = mWebView.capturePicture();
+							int srcw = pic.getWidth();
+							//int srcw = mWebView.getWidth();
+							float scale = (float)bmp.getWidth() / (float)srcw;
+							cv.save();
+							cv.scale(scale, scale);
+							pic.draw(cv);
+							//cv.drawBitmap(, src, dst, null);
+							//mWebView.ondraw(cv);
+							//pic.draw(cv);
 
-					//Picture pic = mWebView.capturePicture();
+							cv.restore();
+						}
 
-					cv.drawARGB(255, 255, 255, 255);
+//						cv.save();
+	//
+//						long time = System.currentTimeMillis();
+//						int timem = 10*1000;
+//						int degree = ((int)((time%timem)/(double)(timem) * 360));
+	//
+//						cv.rotate(degree, bmp.getWidth()/2, bmp.getHeight()/2);
+//						cv.drawText("映し出せ！！", 40, 100, tp);
+//						cv.drawText("Androidより愛を込めて。", 40, 150, tp);
+	//
+//						cv.restore();
 
-					//mWebView.draw(cv);
 
-					{
-						int srcw = mWebView.getWidth();
-						float scale = (float)bmp.getWidth() / (float)srcw;
-						cv.save();
-						cv.scale(scale, scale);
-						//pic.draw(cv);
-						//cv.drawBitmap(, src, dst, null);
-						mWebView.draw(cv);
+						//CFUtil.Log("updateImageをします。");
+						if(mGraTh!=null){
+							mGraTh.updateImage(bmp);
+						}
+						//bmp.recycle();
 
-						cv.restore();
 					}
 
-					cv.save();
 
-					long time = System.currentTimeMillis();
-					int timem = 10*1000;
-					int degree = ((int)((time%timem)/(double)(timem) * 360));
-
-					cv.rotate(degree, bmp.getWidth()/2, bmp.getHeight()/2);
-					cv.drawText("映し出せ！！", 40, 100, tp);
-					cv.drawText("Androidより愛を込めて。", 40, 150, tp);
-
-					cv.restore();
-
-
-					CFUtil.Log("updateImageをします。");
-					if(mGraTh!=null){
-						mGraTh.updateImage(bmp);
 					}
-					//bmp.recycle();
+				};
 
-				}
+				mHandler.post(r);
+
 
 				//sleep
 				if(!Thread.interrupted()){
@@ -451,7 +635,7 @@ public class ScreenFragment extends SherlockFragment{
 
 			}
 
-			System.out.println("end suggest thread.");
+			//System.out.println("end suggest thread.");
 
 		}
 
@@ -708,11 +892,15 @@ public class ScreenFragment extends SherlockFragment{
 	@Override
 	public void onStart() {
 		super.onStart();
+
+
+
 	}
 
 	@Override
 	public void onStop() {
 		super.onStop();
+
 		if(mGetMemberTask!=null){
 			mGetMemberTask.cancel(true);
 		}

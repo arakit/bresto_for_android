@@ -35,6 +35,7 @@ public class GraphicsThread extends Thread{
 	private boolean mIsCanceld = false;;
 
 
+	private String mProjectorIP;
 //	private BufferedImage mImgBuf;
 //	private Graphics2D mGraphic;
 
@@ -46,7 +47,7 @@ public class GraphicsThread extends Thread{
 	private ByteArrayOutputStream mData;//, mWaitData;
 
 
-	public GraphicsThread(int width, int heght){
+	public GraphicsThread(int width, int heght, String proip){
 //		BufferedImage img = new BufferedImage(width, heght, BufferedImage.TYPE_3BYTE_BGR);
 //		Graphics2D g = img.createGraphics();
 //		mImgBuf = img;
@@ -56,6 +57,8 @@ public class GraphicsThread extends Thread{
 
 		mWidth = width;
 		mheight = heght;
+
+		mProjectorIP = proip;
 	}
 
 
@@ -87,7 +90,7 @@ public class GraphicsThread extends Thread{
 		//	mDataStream = os;
 		//}
 
-		log("update_imege");
+		//log("update_imege");
 
 		GraphicsThread.this.interrupt();
 		//Thread.interrupted();
@@ -107,7 +110,8 @@ public class GraphicsThread extends Thread{
 		//projector_ip = "192.168.1.102";
 		//projector_ip = "172.16.32.115";
 		//projector_ip = "172.16.32.115";
-		projector_ip = "192.168.1.141";
+		//projector_ip = "192.168.1.141";
+		projector_ip = mProjectorIP;
 
 
 		HttpClient httpclient = new HttpClient();
@@ -237,7 +241,7 @@ public class GraphicsThread extends Thread{
 
 
 				if(drawing!=null){
-					log("byte_array_stream is not null.");
+					//log("byte_array_stream is not null.");
 
 					long sendst = System.currentTimeMillis();
 					byte[] out_array = rncb.createRNCBHeader(drawing); //JPEGをPC画面投影用のコンテナに詰める
@@ -245,17 +249,17 @@ public class GraphicsThread extends Thread{
 					cos.flush();
 					long sendpass = System.currentTimeMillis() - sendst;
 
-					log("使用時間="+sendpass+"ms.");
+					//log("使用時間="+sendpass+"ms.");
 
 				}else{
-					log("byte_array_stream is null.");
+					//log("byte_array_stream is null.");
 				}
 
 				try {
 					sleep(100);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
-					log("", e);
+					//e.printStackTrace();
+					//log("", e);
 				}
 			}
 

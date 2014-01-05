@@ -1,7 +1,12 @@
 package jp.crudefox.tunacan.chikara.util;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,24 +14,33 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.entity.mime.FormBodyPart;
+import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.text.TextUtils;
 
 public class CFUtil {
@@ -58,6 +72,9 @@ public class CFUtil {
 	public static boolean isDebug(){
 		return true;
 	}
+
+
+
 
 
 
@@ -212,12 +229,17 @@ public class CFUtil {
 	}
 
 
-	
-	public static boolean use_proxy = false;
-	public static String proxy_host = "ccproxy.kanagawa-it.ac.jp";
-	public static int proxy_port = 10080;
-	
-	
+
+
+	public static class HttpResponseData{
+		public List<Cookie> cookies;
+		public String data;
+	}
+
+
+
+
+
 	public static JSONObject postDataReturnJson(String sUrl, ArrayList<NameValuePair> params){
 		String data = postData(sUrl, params);
 		if(TextUtils.isEmpty(data)) return null;
@@ -231,26 +253,68 @@ public class CFUtil {
 	}
 
 	public static String postData(String sUrl, ArrayList<NameValuePair> params) {
+		HttpResponseData hrd = postData(sUrl, params, null);
+		if(hrd==null) return null;
+		return hrd.data;
+	}
 
-		HttpClient httpClient = new DefaultHttpClient();
-		String sReturn = null;
+	public static HttpResponseData postData(String sUrl, ArrayList<NameValuePair> params, List<Cookie> src_cookies) {
+
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+		//String sReturn = null;
+		HttpResponseData result = null;
 
 		try {
+			CookieStore cs = httpClient.getCookieStore();
+			if(src_cookies!=null){
+				for(int i=0;i<src_cookies.size();i++){
+					Cookie c = src_cookies.get(i);
+					cs.addCookie(c);
+				}
+			}
+			HttpContext httpContext = new BasicHttpContext();
+			httpContext.setAttribute(ClientContext.COOKIE_STORE, cs);
+
 
 			HttpPost httpPost = new HttpPost(sUrl);
 			httpPost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 
+
 			HttpParams httpparams = httpClient.getParams();
 			HttpConnectionParams.setConnectionTimeout(httpparams, 1000*3);
 			HttpConnectionParams.setSoTimeout(httpparams, 1000*10);
-			
-			if(use_proxy){
-				HttpHost proxy = new HttpHost(proxy_host, proxy_port);
-				httpparams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-			}
+
 
 			if(true){
-				HttpResponse objResponse = httpClient.execute(httpPost);
+				HttpResponse objResponse = httpClient.execute(httpPost, httpContext);
+
+			    // Cookieの取得.
+			    List<Cookie> cookies = httpClient.getCookieStore().getCookies();
+			    System.err.println("===== " + cookies.size() + " Cookies =====");
+			    for (int i = 0; i < cookies.size(); i++) {
+					StringBuffer sb = new StringBuffer();
+					Cookie c = cookies.get(i);
+					sb.append(""+i);
+					sb.append("/");
+					sb.append(c);
+					sb.append(" / ");
+					sb.append(c.getName());
+					sb.append(" / ");
+					sb.append(c.getValue());
+					sb.append(" / ");
+					sb.append(c.getDomain());
+					sb.append(" / ");
+					sb.append(c.getVersion());
+					sb.append(" / ");
+					sb.append(c.getExpiryDate());
+					sb.append(" / ");
+					sb.append(c.getPath());
+					sb.append(" / ");
+					sb.append(c.getComment());
+					sb.append("\n");
+					System.err.println(sb.toString());
+			    }
+
 
 				if (objResponse.getStatusLine().getStatusCode() < 400){
 					InputStream objStream = objResponse.getEntity().getContent();
@@ -261,8 +325,14 @@ public class CFUtil {
 					while((sLine = objBuf.readLine()) != null){
 						objJson.append(sLine);
 					}
-					sReturn = objJson.toString();
+					String s_ret = objJson.toString();
 					objStream.close();
+
+					if(s_ret!=null){
+						result = new HttpResponseData();
+						result.data = s_ret;
+						result.cookies = cookies;
+					}
 				}
 			}
 //			else{
@@ -272,20 +342,15 @@ public class CFUtil {
 		} catch (IOException e) {
 			return null;
 		}
-			return sReturn;
+			return result;
 		}
 
 		public static String getData(String sUrl) {
+
 			HttpClient objHttp = new DefaultHttpClient();
 			HttpParams params = objHttp.getParams();
 			HttpConnectionParams.setConnectionTimeout(params, 1000*3); //接続のタイムアウト
 			HttpConnectionParams.setSoTimeout(params, 1000*10); //データ取得のタイムアウト
-
-			if(use_proxy){
-				HttpHost proxy = new HttpHost(proxy_host, proxy_port);
-				params.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-			}
-			
 			String sReturn = null;
 		try {
 
@@ -314,9 +379,19 @@ public class CFUtil {
 	public static Bitmap getImage(String sUrl, int connect_time, int so_time){
 		byte[] data =getBytes(sUrl, connect_time, so_time);
 		if(data==null) return null;
-		Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+		BitmapFactory.Options opt = new BitmapFactory.Options();
+		opt.inSampleSize = 8;
+		Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length, opt);
 		return bmp;
 	}
+
+	public static Bitmap getImageToFile(String sUrl, int connect_time, int so_time, File file, int max_width, int max_height){
+		if( !getDataToFile(sUrl, connect_time, so_time, file) ){
+			return null;
+		}
+		return createBitmapByMax(file, max_width, max_height);
+	}
+
 
 	public static byte[] getBytes(String sUrl, int connect_time, int so_time) {
 
@@ -324,12 +399,6 @@ public class CFUtil {
 			HttpParams params = objHttp.getParams();
 			HttpConnectionParams.setConnectionTimeout(params, connect_time); //接続のタイムアウト
 			HttpConnectionParams.setSoTimeout(params, so_time); //データ取得のタイムアウト
-
-			if(use_proxy){
-				HttpHost proxy = new HttpHost(proxy_host, proxy_port);
-				params.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-			}
-
 			byte[] sReturn = null;
 		try {
 
@@ -348,11 +417,233 @@ public class CFUtil {
 
 				objStream.close();
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			return null;
 		}
 		return sReturn;
 	}
+
+	public static boolean getDataToFile(String sUrl, int connect_time, int so_time, File file) {
+
+		HttpClient objHttp = new DefaultHttpClient();
+		HttpParams params = objHttp.getParams();
+		HttpConnectionParams.setConnectionTimeout(params, connect_time); //接続のタイムアウト
+		HttpConnectionParams.setSoTimeout(params, so_time); //データ取得のタイムアウト
+		boolean sReturn = false;
+		try {
+			BufferedOutputStream os = new BufferedOutputStream( new FileOutputStream(file) );
+
+			HttpGet objGet = new HttpGet(sUrl);
+			HttpResponse objResponse = objHttp.execute(objGet);
+			if (objResponse.getStatusLine().getStatusCode() < 400){
+				InputStream objStream = objResponse.getEntity().getContent();
+
+				int len;
+				byte[] buf = new byte[1024];
+				while((len=objStream.read(buf)) != -1){
+					os.write(buf, 0, len);
+				}
+
+				objStream.close();
+			}
+			os.close();
+
+			sReturn = true;
+		} catch (Exception e) {
+			return false;
+		}
+		return sReturn;
+	}
+
+
+
+	public static HttpResponseData postMultiPartData(String sUrl, ArrayList<FormBodyPart> params, List<Cookie> src_cookies) {
+
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+		HttpResponseData result=null;
+
+		try {
+
+			CookieStore cs = httpClient.getCookieStore();
+			if(src_cookies!=null){
+				for(int i=0;i<src_cookies.size();i++){
+					Cookie c = src_cookies.get(i);
+					cs.addCookie(c);
+				}
+			}
+			HttpContext httpContext = new BasicHttpContext();
+			httpContext.setAttribute(ClientContext.COOKIE_STORE, cs);
+
+			HttpPost httpPost = new HttpPost(sUrl);
+
+			//MultipartEntity entry = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, "bjbjbhjbhjbjb", Charset.forName("utf-8"));
+			MultipartEntity entry = new MultipartEntity();
+
+			for(int i=0;i<params.size();i++){
+				FormBodyPart bp = params.get(i);
+				entry.addPart(bp);
+			}
+
+			httpPost.setEntity(entry);
+
+			HttpParams httpparams = httpClient.getParams();
+			HttpConnectionParams.setConnectionTimeout(httpparams, 1000*3);
+			HttpConnectionParams.setSoTimeout(httpparams, 1000*10);
+
+
+			if(true){
+				HttpResponse objResponse = httpClient.execute(httpPost, httpContext);
+
+			    // Cookieの取得.
+			    List<Cookie> cookies = httpClient.getCookieStore().getCookies();
+
+				if (objResponse.getStatusLine().getStatusCode() < 400){
+					InputStream objStream = objResponse.getEntity().getContent();
+					InputStreamReader objReader = new InputStreamReader(objStream);
+					BufferedReader objBuf = new BufferedReader(objReader);
+					StringBuilder objJson = new StringBuilder();
+					String sLine;
+					while((sLine = objBuf.readLine()) != null){
+						objJson.append(sLine);
+					}
+					String s_ret = objJson.toString();
+					objStream.close();
+
+					if(s_ret!=null){
+						result = new HttpResponseData();
+						result.cookies = cookies;
+						result.data = s_ret;
+					}
+				}
+			}
+//			else{
+//				httpClient.execute(httpPost);
+//				return null;
+//			}
+		} catch (IOException e) {
+			return null;
+		}
+			return result;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 	public static BitmapFactory.Options calcBitmapOption(InputStream is,int maxWidth,int maxHeight){
+    	if(is!=null){
+    		try {
+    			BitmapFactory.Options opt = new BitmapFactory.Options();
+    		    opt.inJustDecodeBounds = true;
+    		    BitmapFactory.decodeStream(is, null, opt);
+    		    is.close();
+    		    float scale = Math.min((float)maxWidth / (float)opt.outWidth, (float)maxHeight / (float)opt.outHeight);
+    		    opt.inJustDecodeBounds = false;
+    		    opt.inPurgeable = true;
+    		    if(scale<1.0f){
+    		    	float bai = 1.0f / scale;
+    		    	int i;
+    		    	for(i=2;((float)i)<bai;i*=2);
+    		    	opt.inSampleSize = i;
+    		    }
+    		    return opt;
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+    	}
+    	return null;
+	}
+
+ 	public static Bitmap createBitmapByMax(Context context,Uri uri,int maxWidth,int maxHeight){
+		Bitmap bmp = null;
+    	if(uri!=null){
+    		try {
+    			Context c = context.getApplicationContext();
+    			ContentResolver cr = c.getContentResolver();
+    			InputStream is = cr.openInputStream(uri);
+    			if(is!=null){
+	    			BitmapFactory.Options opt = calcBitmapOption(is, maxWidth, maxHeight);
+	    		    is.close();
+	    		    //もう一度
+	    			if(opt!=null){
+	    				is = cr.openInputStream(uri);
+	    				if(is!=null){
+		    				bmp = BitmapFactory.decodeStream(is, null, opt);
+		        			is.close();
+	    				}
+	    			}
+    			}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+    	}
+    	return bmp;
+	}
+ 	public static Bitmap createBitmapByMax(File file,int maxWidth,int maxHeight){
+		Bitmap bmp = null;
+    	if(file!=null && file.exists() && file.isFile()){
+    		try {
+    			InputStream is = new FileInputStream(file);
+    			BitmapFactory.Options opt = calcBitmapOption(is, maxWidth, maxHeight);
+    		    is.close();
+    		    //もう一度
+    			if(opt!=null){
+    				is = new FileInputStream(file);
+    				bmp = BitmapFactory.decodeStream(is, null, opt);
+    				is.close();
+    			}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+
+    	}
+    	return bmp;
+	}
+ 	public static BitmapDrawable createBitmapDrawableByMax(File file,int maxWidth,int maxHeight){
+ 		Bitmap bmp = createBitmapByMax(file, maxWidth, maxHeight);
+ 		if(bmp!=null){
+ 			return new BitmapDrawable(bmp);
+ 		}
+ 		return null;
+ 	}
 
 
 

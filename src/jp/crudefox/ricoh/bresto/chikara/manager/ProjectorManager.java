@@ -40,7 +40,7 @@ public class ProjectorManager {
 	public List<Projector> listProjector(){
 
 		DiscoveryAgent discover = new DiscoverAgentImpl();
-		List<String> device_ip_list = discover.getDevice("hoge");
+		List<String> device_ip_list = discover.getDevice("PRJ357bce");
 
 		ArrayList<Projector> results = new ArrayList<ProjectorManager.Projector>();
 

@@ -4,11 +4,9 @@ package jp.crudefox.ricoh.bresto.fragment;
 
 import java.util.List;
 
-import jp.crudefox.ricoh.bresto.Const;
+import jp.crudefox.ricoh.bresto.AppManager;
+import jp.crudefox.ricoh.bresto.MainActivity;
 import jp.crudefox.ricoh.bresto.R;
-import jp.crudefox.ricoh.bresto.R.anim;
-import jp.crudefox.ricoh.bresto.R.id;
-import jp.crudefox.ricoh.bresto.R.layout;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
 import jp.crudefox.ricoh.bresto.chikara.manager.ProjectorManager;
 import jp.crudefox.ricoh.bresto.chikara.manager.ProjectorManager.Projector;
@@ -22,6 +20,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,6 +94,12 @@ public class ProjectorFragment extends SherlockFragment{
 
 
 
+	private AppManager mApp;
+
+	private LoginInfo mLoginInfo;
+
+
+
 	private ProjectorManager mProjectorManager;
 
 	private List<ProjectorManager.Projector> mUpdatedProjectorList;
@@ -107,10 +112,6 @@ public class ProjectorFragment extends SherlockFragment{
 
 
 	private GetProjectorListTask mGetProjectorListTask;
-
-
-	private LoginInfo mLoginInfo;
-
 
 
 	public ProjectorFragment() {
@@ -213,7 +214,18 @@ public class ProjectorFragment extends SherlockFragment{
 			@Override
 			public void onClick(View v) {
 				String text = mEditText.getText().toString();
-
+				if(TextUtils.isEmpty(text)){
+					toast("IP Adreessを入力してください！");
+					return ;
+				}
+				mApp.setSelectProjectorIp(text);
+				
+				Activity act = getActivity();
+				if(act instanceof MainActivity){
+					MainActivity ma = (MainActivity)act;
+					ma.closeDrawer();
+				}
+				
 			}
 		});
 
@@ -234,10 +246,11 @@ public class ProjectorFragment extends SherlockFragment{
 		//int wc = ViewGroup.LayoutParams.WRAP_CONTENT;
 //		int mp = ViewGroup.LayoutParams.MATCH_PARENT;
 
-		Bundle bundle = getArguments();
+		//Bundle bundle = getArguments();
 
 		//Intent intent = getIntent();
-		mLoginInfo = (LoginInfo) bundle.getSerializable(Const.AK_LOGIN_INFO);
+		//mLoginInfo = (LoginInfo) bundle.getSerializable(Const.AK_LOGIN_INFO);
+		mLoginInfo = mApp.getLoginInfo();
 
 //		if(CFUtil.isOk_SDK(9)){
 //			mListView.setOverscrollHeader(
@@ -310,7 +323,7 @@ public class ProjectorFragment extends SherlockFragment{
 
 		mUpdatedProjectorList = list;
 
-		
+
 		for(int i=0; i<list.size(); i++){
 			ProjectorManager.Projector item = list.get(i);
 			mAdapter.addItem(item, 0);
@@ -369,6 +382,8 @@ public class ProjectorFragment extends SherlockFragment{
 		//プロジェクトはp1を直打ちしています。
 
 		//mKeywordManager = new KeywordManager(mContext, "p1");
+
+		mApp = (AppManager) getActivity().getApplication();
 
 		mProjectorManager = new ProjectorManager(mContext);
 
@@ -616,12 +631,12 @@ public class ProjectorFragment extends SherlockFragment{
 			List<Projector> result = mProjectorManager.listProjector();
 			mmResult = result;
 
-			if(result!=null){
-				ProjectorManager.Projector n = new Projector();
-				n.ip = "192.168.1.1";
-				n.description = "擬似プロジェクタ";
-				result.add(n);
-			}
+//			if(result!=null){
+//				ProjectorManager.Projector n = new Projector();
+//				n.ip = "192.168.1.1";
+//				n.description = "擬似プロジェクタ";
+//				result.add(n);
+//			}
 
 
 			return result!=null;

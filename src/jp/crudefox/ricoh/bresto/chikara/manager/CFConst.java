@@ -13,7 +13,10 @@ public class CFConst {
 	//public static final String SERVER = "http://192.168.1.5:8080/";
 	//public static final String SERVER = "http://192.168.1.6:8080/";
 	//public static final String SERVER = "http://192.168.1.107:8080/";
-	public static final String SERVER = "http://202.250.66.29/";
+	//public static final String SERVER = "http://202.250.66.29/";
+
+	public static final String DOMAIN = "192.168.1.117";
+	public static final String SERVER = "http://"+DOMAIN+":8080/";
 
 
 
@@ -24,13 +27,19 @@ public class CFConst {
 //	public static final String DEL_CONTRIBUTE = "HeallinServer0/DeleteContribute";
 
 
-	public static final String ROOTDIR = "RicohServer0/";
-	public static final String LOGIN = ROOTDIR + "Login";
-	public static final String CREATE_ACCOUNT = ROOTDIR + "CreateAccount";
+	public static final String ROOTDIR = "BreStoServer0/";
+	public static final String LOGIN = ROOTDIR + "api/login";
+	public static final String PROJECT_LIST = ROOTDIR + "api/project_list";
+	public static final String SELECT_PROJECT = ROOTDIR + "api/select_project";
+
+
+	public static final String CREATE_ACCOUNT = ROOTDIR + "create_user";
+
 	public static final String SUGGEST_KEYWORDS = ROOTDIR + "SuggestKeywords";
 	public static final String KEYWORDS = ROOTDIR + "Keywords";
 	public static final String CONNECT_KEYWORD = ROOTDIR + "ConnectKeyword";
 	public static final String KEYWORDS_RELATIONS = ROOTDIR + "KeywordsRelations";
+
 
 
 }

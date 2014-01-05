@@ -1,4 +1,4 @@
-<android.support.v4.widget.DrawerLayout 
+<android.support.v4.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawer_layout"
@@ -21,8 +21,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
+        <!-- android:id="@android:id/content" -->
+
 	    <FrameLayout
-	        android:id="@android:id/content"
+	        android:id="@+id/fragment_content"
 	        android:layout_width="match_parent"
 	        android:layout_height="match_parent" >
 
@@ -37,13 +39,23 @@
         android:layout_width="240dp"
         android:layout_height="match_parent"
         android:layout_gravity="left"
-        android:background="#333" >
+        android:orientation="vertical"
+        android:background="#eee" >
 
+        <!--
         <Button
             android:id="@+id/drawer_button"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:text="drawer button" />
+            -->
+
+	    <FrameLayout
+	        android:id="@+id/fragment_drawer_content"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent" >
+	    </FrameLayout>
+
     </LinearLayout>
 
 

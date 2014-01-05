@@ -23,7 +23,7 @@ public class Const {
 
 	//ホーム
 	public static final int
-	MENU_ID_CONTROBUTE = 100,
+	MENU_ID_PROJECT_SELECT = 100,
 	MENU_ID_ABOUT = 102,
 	MENU_ID_LOGOUT = 103,
 	MENU_ID_SETTINGS = 104,

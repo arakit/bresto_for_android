@@ -2,17 +2,22 @@ package jp.crudefox.ricoh.bresto.chikara.manager;
 
 import java.io.Serializable;
 
+
+/**
+ * 
+ * 		@author Chikara Funabashi
+ * 		@date: 2013/07/06
+ *
+ */
+
+/**
+ * 		ログイン情報
+ * 		
+ *
+ */	
 public class LoginInfo implements Serializable{
 
-	/*		Auth: Chikara Funabashi
-	 * 		Date: 2013/07/06
-	 *
-	 */
-	
-	/*		ログイン情報
-	 * 		
-	 *
-	 */	
+
 
 
 	SessionID sid;

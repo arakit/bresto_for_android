@@ -3,9 +3,6 @@ package jp.crudefox.ricoh.bresto.fragment;
 import jp.crudefox.ricoh.bresto.Const;
 import jp.crudefox.ricoh.bresto.GraphicsThread;
 import jp.crudefox.ricoh.bresto.R;
-import jp.crudefox.ricoh.bresto.R.drawable;
-import jp.crudefox.ricoh.bresto.R.id;
-import jp.crudefox.ricoh.bresto.R.layout;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
 import jp.crudefox.tunacan.chikara.util.CFUtil;
 import android.annotation.SuppressLint;
@@ -212,7 +209,7 @@ public class ScreenFragment2 extends SherlockFragment{
 	private void startGraphics(){
 		if( mGraTh !=null ) return ;
 
-		GraphicsThread t = mGraTh = new GraphicsThread(200, 200);
+		GraphicsThread t = mGraTh = new GraphicsThread(200, 200, "");
 		t.start();
 
 	}

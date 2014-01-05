@@ -68,7 +68,7 @@ public class LoginActivity extends Activity {
 
 		// Set up the login form.
 		//mEmail = getIntent().getStringExtra(EXTRA_EMAIL);
-		mId = "user0";
+		mId = "chikara";
 		mPassword = "0000";
 		//mName = "ヽ(=´▽`=)ﾉ";
 
