@@ -15,8 +15,11 @@ public class CFConst {
 	//public static final String SERVER = "http://192.168.1.107:8080/";
 	//public static final String SERVER = "http://202.250.66.29/";
 
-	public static final String DOMAIN = "192.168.1.117";
-	public static final String SERVER = "http://"+DOMAIN+":8080/";
+	//public static final String DOMAIN = "192.168.1.117";
+
+	public static final String DOMAIN = "bresto.cloudapp.net";
+	public static final String SERVER = "http://"+DOMAIN+":80/";
+	public static final String SERVER_WS = "ws://"+DOMAIN+":80/";
 
 
 
@@ -31,6 +34,7 @@ public class CFConst {
 	public static final String LOGIN = ROOTDIR + "api/login";
 	public static final String PROJECT_LIST = ROOTDIR + "api/project_list";
 	public static final String SELECT_PROJECT = ROOTDIR + "api/select_project";
+	public static final String SOCKET_NODE_EDGE = ROOTDIR + "api/socket_node_edge";
 
 
 	public static final String CREATE_ACCOUNT = ROOTDIR + "create_user";

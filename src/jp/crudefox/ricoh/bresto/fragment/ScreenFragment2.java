@@ -393,7 +393,7 @@ public class ScreenFragment2 extends SherlockFragment{
 		}
 
 
-		Runnable mmDrawRunnable = new Runnable() {
+		final Runnable mmDrawRunnable = new Runnable() {
 
 			@Override
 			public void run() {
@@ -417,11 +417,7 @@ public class ScreenFragment2 extends SherlockFragment{
 		}
 
 
-
 	}
-
-
-
 
 
 

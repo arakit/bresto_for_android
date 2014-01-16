@@ -8,7 +8,7 @@ import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginManager;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginManager.ProjectInfo;
 import jp.crudefox.ricoh.bresto.fragment.ProjectorFragment;
-import jp.crudefox.ricoh.bresto.fragment.ScreenFragment;
+import jp.crudefox.ricoh.bresto.fragment.ScreenNativeFragment;
 import jp.crudefox.tunacan.chikara.util.AdapterBridge;
 import jp.crudefox.tunacan.chikara.util.CFUtil;
 import android.app.Activity;
@@ -38,7 +38,7 @@ public class MainActivity extends SherlockFragmentActivity {
 	private View mMainContent;
 	private View mContent;
 
-	private ScreenFragment mScreenFragment;
+	private ScreenNativeFragment mScreenFragment;
 	private ProjectorFragment mProjectorFragment;
 
 	private ActionBarDrawerToggle mDrawerListener;
@@ -89,7 +89,7 @@ public class MainActivity extends SherlockFragmentActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setHomeButtonEnabled(true);
 
-        mScreenFragment = new ScreenFragment();
+        mScreenFragment = new ScreenNativeFragment();
         mProjectorFragment = new ProjectorFragment();
 
 

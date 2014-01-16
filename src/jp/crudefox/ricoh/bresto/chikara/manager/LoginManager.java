@@ -98,6 +98,8 @@ public class LoginManager {
 //
 //		}
 
+		log("login url = "+LOGIN_URL);
+
 		HttpResponseData rd = null;
 		//String data = null;
 
@@ -105,6 +107,8 @@ public class LoginManager {
 //		cookie.add(new DefaultC);
 
 		rd = CFUtil.postData(LOGIN_URL, params, null);
+		
+		log("login url2 = "+LOGIN_URL);
 
 		if(rd==null || rd.data==null){
 			if(outResult!=null) outResult[0] = LOGIN_ERR_CONNECT;

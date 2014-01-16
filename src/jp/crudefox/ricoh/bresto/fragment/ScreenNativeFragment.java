@@ -2,15 +2,24 @@ package jp.crudefox.ricoh.bresto.fragment;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import jp.crudefox.ricoh.bresto.AppManager;
 import jp.crudefox.ricoh.bresto.GraphicsThread;
 import jp.crudefox.ricoh.bresto.R;
 import jp.crudefox.ricoh.bresto.chikara.manager.CFConst;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
+import jp.crudefox.ricoh.bresto.chikara.manager.MapManager;
+import jp.crudefox.ricoh.bresto.chikara.manager.MapManager.Keyword;
+import jp.crudefox.ricoh.bresto.chikara.manager.MapManager.KeywordRelation;
 import jp.crudefox.tunacan.chikara.util.CFUtil;
+import jp.crudefox.tunacan.chikara.util.TextDraw;
+import jp.crudefox.tunacan.chikara.util.TextDraw.HAlign;
+import jp.crudefox.tunacan.chikara.util.TextDraw.VAlign;
 
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
 
 import android.annotation.SuppressLint;
@@ -21,8 +30,8 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Picture;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,7 +48,6 @@ import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
@@ -58,7 +66,7 @@ import com.actionbarsherlock.view.MenuItem;
  */
 
 @SuppressLint("SetJavaScriptEnabled")
-public class ScreenFragment extends SherlockFragment{
+public class ScreenNativeFragment extends SherlockFragment{
 
 
 
@@ -78,12 +86,13 @@ public class ScreenFragment extends SherlockFragment{
 	private ScreenThread mScreenThread;
 
 
+	private MapManager mMapManager;
 
 
 
 
 	private DrawView mHeallinView;
-	private WebView mWebView;
+	//private WebView mWebView;
 
 
 	private View mBtn1;
@@ -102,7 +111,7 @@ public class ScreenFragment extends SherlockFragment{
 
 
 
-	public ScreenFragment() {
+	public ScreenNativeFragment() {
 		super();
 		setHasOptionsMenu(true);
 	}
@@ -126,7 +135,7 @@ public class ScreenFragment extends SherlockFragment{
 		CFUtil.Log("onCreateView "+this);
 
 
-		setContentView(R.layout.fragment_screen);
+		setContentView(R.layout.fragment_screen_native);
 
 		//mListView  = (CFOverScrolledListView) findViewById(R.id.member_frends_listView);
 
@@ -135,10 +144,10 @@ public class ScreenFragment extends SherlockFragment{
 
 		mBtn1 = findViewById(R.id.btn_1);
 		mBtn2 = findViewById(R.id.btn_2);
-		mWebView = (WebView) findViewById(R.id.webView);
+		//mWebView = (WebView) findViewById(R.id.webView);
 
 
-		//ViewGroup screen_container = (ViewGroup) findViewById(R.id.screen_container);
+		ViewGroup screen_container = (ViewGroup) findViewById(R.id.screen_container);
 
 
 		//int wc = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -150,7 +159,7 @@ public class ScreenFragment extends SherlockFragment{
 		mHeallinView.setLayoutParams(lp);
 
 
-		//heallin_container.addView(mHeallinView);
+		screen_container.addView(mHeallinView);
 
 
 		mBtn1.setOnClickListener(new View.OnClickListener() {
@@ -274,14 +283,14 @@ public class ScreenFragment extends SherlockFragment{
 
 
 
-		WebSettings settings =mWebView.getSettings();
+		//WebSettings settings =mWebView.getSettings();
 
-		settings.setUserAgentString("bresto");
+		//settings.setUserAgentString("bresto");
 
-		settings.setJavaScriptEnabled(true);
+		//settings.setJavaScriptEnabled(true);
 
-		mWebView.setWebViewClient(new MyWebViewClient());
-		mWebView.setWebChromeClient(new MyWebVieChrome());
+		//mWebView.setWebViewClient(new MyWebViewClient());
+		//mWebView.setWebChromeClient(new MyWebVieChrome());
 
 		//mWebView.addJavascriptInterface(new WebSocketFactory(mWebView), "WebSocketFactory");
 
@@ -326,7 +335,7 @@ public class ScreenFragment extends SherlockFragment{
 
 
 		//mWebView.loadUrl("http://192.168.1.122/bresto/");
-        mWebView.loadUrl(CFConst.SERVER+CFConst.ROOTDIR+"play.html");
+        //mWebView.loadUrl(CFConst.SERVER+CFConst.ROOTDIR+"play.html");
 	}
 
 
@@ -334,13 +343,25 @@ public class ScreenFragment extends SherlockFragment{
 
 		 URI uri = null;
 		try {
-			uri = new URI("ws://192.168.1.117:8080/BreStoServer0/api/socket_node_edge");
+			uri = new URI(MapManager.SOCKET_NODE_EDGE_URL);
 		} catch (URISyntaxException e) {
 			// TODO 自動生成された catch ブロック
 			e.printStackTrace();
 		}
 
-        mClient = new WebSocketClient(uri) {
+		CFUtil.Log("ws = "+uri);
+
+		HashMap<String, String> headers = new LinkedHashMap<String, String>();
+
+
+		//クッキー
+		LoginInfo lf = mApp.getLoginInfo();
+		if(lf!=null){
+			headers.put("Cookie", "JSESSIONID="+lf.getToken().getSessionID());
+		}
+
+
+        mClient = new WebSocketClient(uri, new Draft_17(), headers, 1000*2) {
             @Override
             public void onOpen(ServerHandshake handshake) {
                 //Log.d(TAG, "onOpen");
@@ -348,8 +369,6 @@ public class ScreenFragment extends SherlockFragment{
 	           	 Runnable r = new Runnable() {
 					@Override
 					public void run() {
-			           	 String script = "javascript: fakeWebSocket.open();";
-			           	 mWebView.loadUrl(script);
 					}
 				};
 				mHandler.post(r);
@@ -357,24 +376,11 @@ public class ScreenFragment extends SherlockFragment{
 
             @Override
             public void onMessage(final String message) {
-           	 CFUtil.Log("onMessage "+message);
-                //Log.d(TAG, "onMessage");
-                //Log.d(TAG, "Message:" + message);
-//                mHandler.post(new Runnable() {    // ----2
-//                    @Override
-//                    public void run() {
-//                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-//                    }
-//                });
+            	CFUtil.Log("onMessage "+message);
 
-	           	 Runnable r = new Runnable() {
-					@Override
-					public void run() {
-			           	 String script = "javascript: var str = '"+ message +"'; fakeWebSocket.message(str);";
-			           	 mWebView.loadUrl(script);
-					}
-				};
-				mHandler.post(r);
+           	 	mMapManager.parseJson(message);
+
+           	 	mHeallinView.postInvalidate();
             }
 
             @Override
@@ -385,8 +391,7 @@ public class ScreenFragment extends SherlockFragment{
                 Runnable r = new Runnable() {
 					@Override
 					public void run() {
-		              	 String script = "javascript: fakeWebSocket.error();";
-		               	 mWebView.loadUrl(script);
+
 					}
 				};
  				mHandler.post(r);
@@ -400,12 +405,13 @@ public class ScreenFragment extends SherlockFragment{
 	           	 Runnable r = new Runnable() {
 					@Override
 					public void run() {
-			           	 String script = "javascript: fakeWebSocket.close();";
-			           	 mWebView.loadUrl(script);
+			           	 //String script = "javascript: fakeWebSocket.close();";
+			           	 //mWebView.loadUrl(script);
 					}
 				};
 				mHandler.post(r);
             }
+
         };
 
         mClient.connect();
@@ -498,6 +504,8 @@ public class ScreenFragment extends SherlockFragment{
 
 		mBmp = Bitmap.createBitmap(960, 960, Bitmap.Config.ARGB_4444);
 
+		mMapManager = new MapManager(getActivity());
+
 	}
 
 
@@ -559,7 +567,6 @@ public class ScreenFragment extends SherlockFragment{
 			int roop_count = 0;
 			while(!mmIsCanceld){
 
-				//System.out.println("suggest roop_count = "+roop_count);
 
 				Runnable r = new Runnable() {
 					@Override
@@ -567,53 +574,22 @@ public class ScreenFragment extends SherlockFragment{
 
 						draw_label : {
 
-						Bitmap bmp = mBmp;
-						Canvas cv = new Canvas(bmp);
+							Bitmap bmp = mBmp;
+							Canvas cv = new Canvas(bmp);
 
-						TextPaint tp = new TextPaint();
-						tp.setTextSize(19);
-						tp.setColor(Color.argb(255, 0,0,0));
+							TextPaint tp = new TextPaint();
+							tp.setTextSize(19);
+							tp.setColor(Color.argb(255, 0,0,0));
 
 
-						cv.drawARGB(255, 255, 255, 255);
+							cv.drawARGB(255, 255, 255, 255);
 
-						//mWebView.draw(cv);
 
-						{
-							Picture pic = mWebView.capturePicture();
-							int srcw = pic.getWidth();
-							//int srcw = mWebView.getWidth();
-							float scale = (float)bmp.getWidth() / (float)srcw;
-							cv.save();
-							cv.scale(scale, scale);
-							pic.draw(cv);
-							//cv.drawBitmap(, src, dst, null);
-							//mWebView.ondraw(cv);
-							//pic.draw(cv);
+							if(mGraTh!=null){
+								mGraTh.updateImage(bmp);
+							}
 
-							cv.restore();
 						}
-
-//						cv.save();
-	//
-//						long time = System.currentTimeMillis();
-//						int timem = 10*1000;
-//						int degree = ((int)((time%timem)/(double)(timem) * 360));
-	//
-//						cv.rotate(degree, bmp.getWidth()/2, bmp.getHeight()/2);
-//						cv.drawText("映し出せ！！", 40, 100, tp);
-//						cv.drawText("Androidより愛を込めて。", 40, 150, tp);
-	//
-//						cv.restore();
-
-
-						//CFUtil.Log("updateImageをします。");
-						if(mGraTh!=null){
-							mGraTh.updateImage(bmp);
-						}
-						//bmp.recycle();
-
-					}
 
 
 					}
@@ -635,7 +611,6 @@ public class ScreenFragment extends SherlockFragment{
 
 			}
 
-			//System.out.println("end suggest thread.");
 
 		}
 
@@ -679,20 +654,39 @@ public class ScreenFragment extends SherlockFragment{
 
 		Handler mmHandler = new Handler();
 
-		Bitmap mmChara;
 		float mDesnsity;
 
 		boolean mmIsStarted;
 		boolean mmIsInitialized = false;
+
+		Paint mCirclePaint;
+		Paint mLinePaint;
+		TextPaint mKwPaint;
+
+		final RectF mDrawRect = new RectF();
 
 
 		public DrawView(Context context, AttributeSet attrs) {
 			super(context, attrs);
 
 			Resources res = getResources();
-			mDesnsity = res.getDisplayMetrics().density;
+			float sd = mDesnsity = res.getDisplayMetrics().density;
 
-			mmChara = ((BitmapDrawable) res.getDrawable(R.drawable.chara_01)).getBitmap();
+			mCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			mCirclePaint.setStyle(Paint.Style.FILL);
+			mCirclePaint.setColor(Color.argb(255, 0,0,0));
+
+			mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			mLinePaint.setStyle(Paint.Style.STROKE);
+			mLinePaint.setColor(Color.argb(255, 0,0,0));
+			mLinePaint.setStrokeWidth(8*sd);
+
+			mKwPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+			//mKwPaint.setStyle(Paint.Style.STROKE);
+			mKwPaint.setColor(Color.argb(255, 0,0,0));
+			mKwPaint.setTextSize(14 * sd);
+			//mKwPaint.setStrokeWidth(20*sd);
+
 
 
 		}
@@ -729,6 +723,66 @@ public class ScreenFragment extends SherlockFragment{
 
 		}
 
+
+		public void drawMap(Canvas canvas){
+
+//			int cx = width/2;
+//			int cy = height/2;
+
+			canvas.drawARGB(255, 255,255,255);
+
+
+			Keyword[] ks;
+			KeywordRelation[] krs;
+			synchronized (mMapManager){
+				ks = mMapManager.getNodesArray();
+				krs = mMapManager.getEdgeArray();
+			}
+
+			{
+				canvas.save();
+				//canvas.translate(1000/2.0f, 1000/2.0f);
+
+				Paint cp = mCirclePaint;
+				Paint lp = mLinePaint;
+
+				for(int i=0;i<krs.length;i++){
+					KeywordRelation kr = krs[i];
+					Keyword k1, k2;
+					synchronized (mMapManager) {
+						k1 = mMapManager.getNodeById(kr.kid1);
+						k2 = mMapManager.getNodeById(kr.kid2);
+					}
+					if(k1==null || k2==null) continue;
+
+					lp.setColor(Color.argb(255, 220, 220, 220));
+
+					canvas.drawLine(k1.x, k1.y, k2.x, k2.y, lp);
+				}
+
+				for(int i=0;i<ks.length;i++){
+					Keyword k = ks[i];
+
+					int col = Color.HSVToColor(255, new float[]{(i*25)%360 , 0.6f, 1.0f});
+					cp.setColor(col);
+
+					RectF rc = mDrawRect;
+					rc.left = (k.x - k.w/2);
+					rc.top = (k.y - k.h/2 );
+					rc.right = (k.x + k.w/2);
+					rc.bottom = (k.y + k.h/2);
+					canvas.drawOval(rc, cp);
+
+					TextDraw.drawText(canvas, mKwPaint, mKwPaint.getFontMetrics(),
+							k.keyword, k.x, k.y, HAlign.Center , VAlign.Center );
+				}
+
+				canvas.restore();
+			}
+
+		}
+
+
 		@Override
 		protected void onDraw(Canvas canvas) {
 			super.onDraw(canvas);
@@ -743,6 +797,18 @@ public class ScreenFragment extends SherlockFragment{
 			int cx = width/2;
 			int cy = height/2;
 			float sd = mDesnsity;
+
+			float fitscale = (width/sd) / 1000.0f;
+
+			canvas.save();
+			canvas.translate(1000/2.0f, 1000/2.0f);
+			canvas.scale( fitscale, fitscale);
+			canvas.scale(sd, sd, cx, cy);
+
+			drawMap(canvas);
+
+			canvas.restore();
+
 
 //			Bitmap ch = mmChara;
 //			Rect s_rc = new Rect(0,0,ch.getWidth(),ch.getHeight());
@@ -764,8 +830,8 @@ public class ScreenFragment extends SherlockFragment{
 //				bb = (mmWalk-0)/250.0f;
 //
 //			}
+			//canvas.drawARGB(255, 128,128,255);
 
-			canvas.drawARGB(255, 128,128,255);
 
 //			canvas.drawCircle(cx, cy, 200, null);
 
