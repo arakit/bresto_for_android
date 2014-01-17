@@ -1,0 +1,65 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <!--
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    -->
+
+    <LinearLayout
+        android:id="@+id/drawer_top"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="#aa000000"
+        android:gravity="center_vertical"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/text_map"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="マップ："
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#ffffffff" />
+
+        <TextView
+            android:id="@+id/text_projector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="プロジェクター："
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#ffffffff" />
+
+    </LinearLayout>
+
+    <jp.crudefox.tunacan.chikara.util.CFOverScrolledListView
+        android:id="@+id/drawer_listView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="false"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/drawer_top"
+        android:choiceMode="singleChoice"
+        android:clickable="true"
+        android:divider="#00ffffff"
+        android:dividerHeight="8dp"
+        android:fadingEdge="none"
+        android:fastScrollEnabled="true"
+        android:longClickable="true"
+        android:smoothScrollbar="false" >
+
+    </jp.crudefox.tunacan.chikara.util.CFOverScrolledListView>
+
+
+
+</RelativeLayout>

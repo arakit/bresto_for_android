@@ -10,6 +10,7 @@ import jp.crudefox.ricoh.bresto.GraphicsThread;
 import jp.crudefox.ricoh.bresto.R;
 import jp.crudefox.ricoh.bresto.chikara.manager.CFConst;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
+import jp.crudefox.ricoh.bresto.chikara.manager.LoginManager.ProjectInfo;
 import jp.crudefox.ricoh.bresto.chikara.manager.MapManager;
 import jp.crudefox.ricoh.bresto.chikara.manager.MapManager.Keyword;
 import jp.crudefox.ricoh.bresto.chikara.manager.MapManager.KeywordRelation;
@@ -32,7 +33,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,7 +50,9 @@ import android.webkit.CookieSyncManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockFragment;
@@ -81,12 +83,14 @@ public class ScreenNativeFragment extends SherlockFragment{
 	private LayoutInflater mLayoutInflater;
 	//private DateFormat mDateFormat;
 
-	private GetMemberTask mGetMemberTask;
+	//private GetMemberTask mGetMemberTask;
 
 	private ScreenThread mScreenThread;
 
 
 	private MapManager mMapManager;
+
+	private boolean mIsFirst = true;
 
 
 
@@ -97,6 +101,11 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 	private View mBtn1;
 	private View mBtn2;
+
+	private ViewGroup mReadyContent;
+	private TextView mReadyText;
+	private Button mBtn_Start;
+	private Button mBtn_Stop;
 
 	//private TextView mCommentTextView;
 
@@ -144,6 +153,13 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 		mBtn1 = findViewById(R.id.btn_1);
 		mBtn2 = findViewById(R.id.btn_2);
+
+
+
+		mReadyContent = (ViewGroup) findViewById(R.id.ready_content);
+		mReadyText = (TextView) findViewById(R.id.text_ready);
+		mBtn_Start = (Button) findViewById(R.id.btn_start);
+		mBtn_Stop = (Button) findViewById(R.id.btn_stop);
 		//mWebView = (WebView) findViewById(R.id.webView);
 
 
@@ -229,7 +245,22 @@ public class ScreenNativeFragment extends SherlockFragment{
 		});
 
 
-		//mCommentTextView.setText("");
+		mBtn_Start.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				startGraphicsAndScreen();
+
+				//showReady(false);
+			}
+		});
+		mBtn_Stop.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				stopScreen();
+				stopGraphics();
+				//showReady(true);
+			}
+		});
 
 
 //		Bundle bundle = getArguments();
@@ -237,16 +268,12 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 		mLoginInfo = mApp.getLoginInfo();
 
-		//Intent intent = getIntent();
-//		mLoginInfo = (LoginInfo) bundle.getSerializable(Const.AK_LOGIN_INFO);
+
 
 //		if(CFUtil.isOk_SDK(9)){
 //			mListView.setOverscrollHeader(
 //					getResources().getDrawable(R.drawable.update_over_scrolled));
 //		}
-
-
-
 
 
 		//mListView.setAdapter(mAdapter);
@@ -261,18 +288,6 @@ public class ScreenNativeFragment extends SherlockFragment{
 			//finish();
 		}
 
-//		mListView.setOnOverScrolledListener(mOverScrolledListener);
-//
-//		mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//			@Override
-//			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//
-//				MItem mitem = mMemberManager.getItemByIndex(position);
-//				if(mitem==null) return ;
-//				showFrendsDialog(mitem);
-//
-//			}
-//		});
 
 
 
@@ -305,7 +320,35 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 
 
-	public void startWebView(){
+	private void showReady(boolean visible){
+
+		if(visible){
+			mReadyContent.setVisibility(View.VISIBLE);
+			mReadyContent.bringToFront();
+
+			 String ip = mApp.getSelectProjectorIp();
+			 ProjectInfo pi = mApp.getSelectMap();
+
+			StringBuilder sb = new StringBuilder();
+
+			if(pi==null){
+				sb.append("マップが選択されていません。\n");
+			}else{
+				sb.append(""+pi.project_name+"を開きます。\n");
+			}
+			if(ip==null){
+				sb.append("プロジェクタが選択されていません。\n");
+			}
+
+
+			mReadyText.setText(sb.toString());
+		}else{
+			mReadyContent.setVisibility(View.GONE);
+		}
+
+	}
+
+	private void _startWebView(){
 
 		LoginInfo li = mApp.getLoginInfo();
 		if(li==null) return ;
@@ -369,6 +412,7 @@ public class ScreenNativeFragment extends SherlockFragment{
 	           	 Runnable r = new Runnable() {
 					@Override
 					public void run() {
+						showReady(false);
 					}
 				};
 				mHandler.post(r);
@@ -391,7 +435,7 @@ public class ScreenNativeFragment extends SherlockFragment{
                 Runnable r = new Runnable() {
 					@Override
 					public void run() {
-
+						showReady(true);
 					}
 				};
  				mHandler.post(r);
@@ -407,6 +451,7 @@ public class ScreenNativeFragment extends SherlockFragment{
 					public void run() {
 			           	 //String script = "javascript: fakeWebSocket.close();";
 			           	 //mWebView.loadUrl(script);
+						showReady(true);
 					}
 				};
 				mHandler.post(r);
@@ -457,6 +502,11 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 	private GraphicsThread mGraTh;
 
+
+	private void startGraphicsAndScreen(){
+		startGraphics();
+		startScreen();
+	}
 
 	private void startGraphics(){
 		if( mGraTh !=null ) return ;
@@ -532,27 +582,27 @@ public class ScreenNativeFragment extends SherlockFragment{
 	}
 
 
-	private void postAttemptGetBorad(long delayed){
-		mHandler.postDelayed(new Runnable() {
-			@Override
-			public void run() {
-				Activity activity = getActivity();
-				if(activity==null) return ;
-				if(activity.isFinishing()) return ;
-				attemptGetBorad();
-			}
-		}, delayed);
-	}
+//	private void postAttemptGetBorad(long delayed){
+//		mHandler.postDelayed(new Runnable() {
+//			@Override
+//			public void run() {
+//				Activity activity = getActivity();
+//				if(activity==null) return ;
+//				if(activity.isFinishing()) return ;
+//				attemptGetBorad();
+//			}
+//		}, delayed);
+//	}
 
-	private void attemptGetBorad(){
-		if(mGetMemberTask!=null){
-			return ;
-		}
-
-		mGetMemberTask = new GetMemberTask();
-		mGetMemberTask.execute((Void)null);
-
-	}
+//	private void attemptGetBorad(){
+//		if(mGetMemberTask!=null){
+//			return ;
+//		}
+//
+//		mGetMemberTask = new GetMemberTask();
+//		mGetMemberTask.execute((Void)null);
+//
+//	}
 
 
 
@@ -574,6 +624,8 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 						draw_label : {
 
+							if(mmIsCanceld) return;
+
 							Bitmap bmp = mBmp;
 							Canvas cv = new Canvas(bmp);
 
@@ -583,6 +635,8 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 
 							cv.drawARGB(255, 255, 255, 255);
+
+							mHeallinView.draw(cv);
 
 
 							if(mGraTh!=null){
@@ -649,7 +703,7 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 	private class DrawView extends View{
 
-		public static final int FRAME_TIME = 50;
+		public static final int FRAME_TIME = 100;
 		public static final float FRAME_SEC_F = FRAME_TIME / 1000.0f;
 
 		Handler mmHandler = new Handler();
@@ -715,12 +769,21 @@ public class ScreenNativeFragment extends SherlockFragment{
 		private void tickHeallin(){
 			if(!mmIsInitialized) return ;
 
-			int width = getWidth();
+			//int width = getWidth();
 
 
+			Keyword[] kws;
+			synchronized (mMapManager) {
+				kws = mMapManager.getNodesArray();
+			}
+
+			boolean upd = false;
+			for(Keyword k : kws){
+				upd |= k.tick(0.10f);
+			}
 
 
-
+			CFUtil.Log("tick");
 		}
 
 
@@ -926,9 +989,9 @@ public class ScreenNativeFragment extends SherlockFragment{
 	public void onDestroy() {
 		// TODO 自動生成されたメソッド・スタブ
 		super.onDestroy();
-		if(mGetMemberTask!=null){
-			mGetMemberTask.cancel(true);
-		}
+//		if(mGetMemberTask!=null){
+//			mGetMemberTask.cancel(true);
+//		}
 		if(mHeallinView!=null){
 			mHeallinView.stopHeallin();
 		}
@@ -953,23 +1016,34 @@ public class ScreenNativeFragment extends SherlockFragment{
 		if(mHeallinView!=null){
 			mHeallinView.startHeallin();
 		}
+
+//		ProjectInfo p = mApp.getSelectMap();
+//		if(p!=null){
+//			startGraphicsAndScreen();
+//		}
 	}
 
 	@Override
 	public void onStart() {
 		super.onStart();
 
+		if(mIsFirst){
+			mIsFirst = false;
 
+		}
 
+		showReady(true);
+
+		
 	}
 
 	@Override
 	public void onStop() {
 		super.onStop();
 
-		if(mGetMemberTask!=null){
-			mGetMemberTask.cancel(true);
-		}
+//		if(mGetMemberTask!=null){
+//			mGetMemberTask.cancel(true);
+//		}
 
 		stopScreen();
 		stopGraphics();
@@ -978,42 +1052,42 @@ public class ScreenNativeFragment extends SherlockFragment{
 
 
 
-	/**
-	 * doBack, Progress, postExecute
-	 */
-	private class GetMemberTask extends AsyncTask<Void, Void, Boolean> {
-		@Override
-		protected Boolean doInBackground(Void... params) {
-			// TODO: attempt authentication against a network service.
-
-			postToast("更新中...");
-
-			boolean result = true;//mMemberManager._update_mock(mLoginInfo);
-
-			return result;
-
-		}
-
-		@Override
-		protected void onPostExecute(final Boolean success) {
-			mGetMemberTask = null;
-			//showProgress(false);
-
-//			if(success){
-//				toast("メンバー情報を更新しました。");
-//				updateListView();
-//			}else{
-//				toast("メンバー情報を更新出来ませんでした\n(；´Д｀)");
-//			}
-
-		}
-
-		@Override
-		protected void onCancelled() {
-			mGetMemberTask = null;
-			//showProgress(false);
-		}
-	}
+//	/**
+//	 * doBack, Progress, postExecute
+//	 */
+//	private class GetMemberTask extends AsyncTask<Void, Void, Boolean> {
+//		@Override
+//		protected Boolean doInBackground(Void... params) {
+//			// TODO: attempt authentication against a network service.
+//
+//			postToast("更新中...");
+//
+//			boolean result = true;//mMemberManager._update_mock(mLoginInfo);
+//
+//			return result;
+//
+//		}
+//
+//		@Override
+//		protected void onPostExecute(final Boolean success) {
+//			mGetMemberTask = null;
+//			//showProgress(false);
+//
+////			if(success){
+////				toast("メンバー情報を更新しました。");
+////				updateListView();
+////			}else{
+////				toast("メンバー情報を更新出来ませんでした\n(；´Д｀)");
+////			}
+//
+//		}
+//
+//		@Override
+//		protected void onCancelled() {
+//			mGetMemberTask = null;
+//			//showProgress(false);
+//		}
+//	}
 
 
 

@@ -3,6 +3,7 @@ package jp.crudefox.ricoh.bresto;
 
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginManager;
+import jp.crudefox.ricoh.bresto.chikara.manager.LoginManager.ProjectInfo;
 import android.app.Application;
 
 
@@ -32,6 +33,8 @@ public class AppManager extends Application{
 
 
 	private String mSelectProjectorIp;
+
+	private ProjectInfo mSelectMap;
 
 
 	@Override
@@ -88,6 +91,16 @@ public class AppManager extends Application{
 	public String getSelectProjectorIp(){
 		return mSelectProjectorIp;
 	}
+
+
+	public void setSelectMap(ProjectInfo map){
+		mSelectMap = map;
+	}
+	public ProjectInfo getSelectMap(){
+		return mSelectMap;
+	}
+
+
 
 
 	public void clearLogin(){

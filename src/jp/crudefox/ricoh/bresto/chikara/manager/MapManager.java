@@ -30,7 +30,46 @@ public class MapManager {
 		public String keyword = null;
 		public int x,y,w,h;
 		public int good;
+
+//		public final KeywordTarget target = new KeywordTarget();
+//
+//		public class KeywordTarget implements Serializable{
+//
+//		}
+
+		public int tx,ty,tw,th;
+
+		public boolean tick(float pww){
+			boolean upd = false;
+
+			float pw = pww;
+
+			if( tx!=x ){
+				int p = (int)( (tx - x) * pw );
+				if(p!=0){ x += p; } else { x = tx; }
+				upd = true;
+			}
+			if( ty!=y ){
+				int p = (int)( (ty - y) * pw );
+				if(p!=0){ y += p; } else { y = ty; }
+				upd = true;
+			}
+			if( tw!=w ){
+				int p = (int)( (tw - w) * pw );
+				if(p!=0){ w += p; } else { w = tw; }
+				upd = true;
+			}
+			if( th!=h ){
+				int p = (int)( (th - h) * pw );
+				if(p!=0){ h += p; } else { h = th; }
+				upd = true;
+			}
+
+			return upd;
+		}
 	}
+
+
 
 	public static class KeywordRelation implements Serializable{
 		public int kid1 = -1;
@@ -90,7 +129,6 @@ public class MapManager {
 	}
 
 
-
 	public synchronized void parseJson(String str){
 
 		try {
@@ -113,13 +151,15 @@ public class MapManager {
 						int h = jnode.getInt("h");
 						int good = jnode.getInt("good");
 
-						Keyword kw = new Keyword();
+						Keyword kw = mNodes.get(kid);
+						if(kw==null) kw = new Keyword();
+
 						kw.kid = Integer.parseInt(kid);
 						kw.keyword = keyword;
-						kw.x = x;
-						kw.y = y;
-						kw.w = w;
-						kw.h = h;
+						kw.tx = x;
+						kw.ty = y;
+						kw.tw = w;
+						kw.th = h;
 						kw.good = good;
 
 						mNodes.put(kw.kid, kw);

@@ -24,7 +24,7 @@
         <!-- android:id="@android:id/content" -->
 
 	    <FrameLayout
-	        android:id="@+id/fragment_content"
+	        android:id="@+id/main_content_fragment"
 	        android:layout_width="match_parent"
 	        android:layout_height="match_parent" >
 
@@ -34,13 +34,13 @@
 
 
     <!--  -->
+
     <LinearLayout
         android:id="@+id/left_drawer"
         android:layout_width="240dp"
         android:layout_height="match_parent"
         android:layout_gravity="left"
-        android:orientation="vertical"
-        android:background="#eee" >
+        android:orientation="vertical" >
 
         <!--
         <Button
@@ -50,11 +50,13 @@
             android:text="drawer button" />
             -->
 
+		<!--
 	    <FrameLayout
 	        android:id="@+id/fragment_drawer_content"
 	        android:layout_width="match_parent"
 	        android:layout_height="match_parent" >
 	    </FrameLayout>
+	    -->
 
     </LinearLayout>
 

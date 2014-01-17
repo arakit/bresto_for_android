@@ -5,7 +5,6 @@ package jp.crudefox.ricoh.bresto.fragment;
 import java.util.List;
 
 import jp.crudefox.ricoh.bresto.AppManager;
-import jp.crudefox.ricoh.bresto.MainActivity;
 import jp.crudefox.ricoh.bresto.R;
 import jp.crudefox.ricoh.bresto.chikara.manager.LoginInfo;
 import jp.crudefox.ricoh.bresto.chikara.manager.ProjectorManager;
@@ -20,14 +19,12 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.EditText;
-import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,7 +45,7 @@ import com.actionbarsherlock.view.MenuItem;
  *
  */
 
-public class ProjectorFragment extends SherlockFragment{
+public class DrawerFragment extends SherlockFragment{
 
 
 
@@ -85,12 +82,12 @@ public class ProjectorFragment extends SherlockFragment{
 
 	private ProjectorListAdapter mAdapter;
 
-	private GridView mGridView;
+	private ListView mListView;
 
-	private EditText mEditText;
-	private View mOkBtn;
 
-	private TextView mTopTextView;
+	private TextView mMapTextView;
+	private TextView mProjectorTextView;
+
 
 
 
@@ -114,7 +111,7 @@ public class ProjectorFragment extends SherlockFragment{
 	private GetProjectorListTask mGetProjectorListTask;
 
 
-	public ProjectorFragment() {
+	public DrawerFragment() {
 		super();
 		setHasOptionsMenu(true);
 	}
@@ -138,101 +135,30 @@ public class ProjectorFragment extends SherlockFragment{
 		CFUtil.Log("onCreateView "+this);
 
 
-		setContentView(R.layout.fragment_projector);
+		setContentView(R.layout.fragment_drawer);
 
-		mGridView = (GridView) findViewById(R.id.projector_gridView);
-		mOkBtn = findViewById(R.id.projector_btn_ok);
-		mEditText = (EditText) findViewById(R.id.projector_edittext);
-		mTopTextView = (TextView) findViewById(R.id.projector_top_text);
-
+		mListView = (ListView) findViewById(R.id.drawer_listView);
+		mMapTextView = (TextView) findViewById(R.id.text_map);
+		mProjectorTextView = (TextView) findViewById(R.id.text_projector);
 
 
 		mAdapter = new ProjectorListAdapter(mContext);
 
-		mGridView.setAdapter(mAdapter);
+		mListView.setAdapter(mAdapter);
 
 
 		//グリッドビューを選択したときフラグメントでサジェスト用のフラグメントに遷移する。
-		mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+		mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				ProjectorManager.Projector p = mAdapter.getItem(position);
 				if(p==null) return ;
+				
+				
 
-				mEditText.setText(p.ip);
-
-//				KeywordsSuggestFragment f = new KeywordsSuggestFragment();
-//				Bundle args = new Bundle();
-//				args.putSerializable(Const.AK_KEYWORD, kw);
-//				args.putSerializable(Const.AK_LOGIN_INFO, mLoginInfo);
-//				f.setArguments(args);
-//				FragmentManager manager = getFragmentManager();
-//				manager.beginTransaction()
-//				       .addToBackStack("KeywordsSuggestFragment")
-//				       .replace(android.R.id.content, f)
-//				       .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-//				       .commit();
+				//mEditText.setText(p.ip);
 			}
 		});
-
-//		updateContoributeSpinner(new ArrayList<String>());
-
-
-//		{
-//			Spinner spinner = mSuggestSpinnerView;
-//			ArrayAdapter<String> ada_sr = mSuggestSpinnerAdapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item);
-//			ada_sr.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//
-//			spinner.setAdapter(ada_sr);
-//
-////			AdapterBridge<Integer> bri = mSuggestSpinnerBridge = new AdapterBridge<Integer>();
-////
-////			for(int i=0;i<3;i++){
-////				bri.addItem("item"+i, i);
-//////				int sr = MainActivity._SAMPLE_RATE_LIST[i];
-//////				if(CFSoundRecorder.isSupportedSampleRateMono16bit(sr)){
-//////					mSampleRateBridge.addItem(String.format("%1$,3d Hz", sr), sr);
-//////				}
-////			}
-////			String[] items = bri.getItemTextArray();
-////			for(int i=0;i<items.length;i++) ada_sr.add(items[i]);
-////			spinner.setAdapter(ada_sr);
-////			spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-////				public void onItemSelected(AdapterView<?> parent, View view,int position, long id) {
-//////					AppUtil.Log("mSamplerateSpinner.onItemSelected");
-//////					int sample_rate = mSampleRateBridge.getItem(position);
-//////					mActivity.setSampleRate(sample_rate);
-//////					CFSettings.setRecordingSampleRate(getActivity().getApplicationContext(), mActivity.getSampleRate());
-////				}
-////				public void onNothingSelected(AdapterView<?> parent) {
-////				}
-////			});
-//		}
-
-
-		mOkBtn.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				String text = mEditText.getText().toString();
-				if(TextUtils.isEmpty(text)){
-					toast("IP Adreessを入力してください！");
-					return ;
-				}
-				mApp.setSelectProjectorIp(text);
-
-				Activity act = getActivity();
-				if(act instanceof MainActivity){
-					MainActivity ma = (MainActivity)act;
-					ma.selectIp();
-					ma.closeDrawer();
-				}
-
-			}
-		});
-
-
-		mTopTextView.setText("プロジェクターを選択してください。");
-
 
 
 		//mListView  = (CFOverScrolledListView) findViewById(R.id.member_frends_listView);
@@ -551,12 +477,6 @@ public class ProjectorFragment extends SherlockFragment{
 			attemptGetProjectorList();
 		}
 
-		String ip = mApp.getSelectProjectorIp();
-		if(!TextUtils.isEmpty(ip)){
-			mEditText.setText(ip);
-		}else{
-			mEditText.setText("");
-		}
 
 	}
 
@@ -638,18 +558,12 @@ public class ProjectorFragment extends SherlockFragment{
 			List<Projector> result = mProjectorManager.listProjector();
 			mmResult = result;
 
-			if(result!=null){
+//			if(result!=null){
 //				ProjectorManager.Projector n = new Projector();
 //				n.ip = "192.168.1.1";
 //				n.description = "擬似プロジェクタ";
 //				result.add(n);
-
-				ProjectorManager.Projector n = new Projector();
-				n.ip = "192.168.0.251";
-				n.description = "会場のプロジェクタ";
-				result.add(n);
-
-			}
+//			}
 
 
 			return result!=null;
@@ -661,7 +575,7 @@ public class ProjectorFragment extends SherlockFragment{
 			//showProgress(false);
 
 			if(success){
-				postToast("プロジェクタ一覧を更新しましした。");
+				postToast("更新しましした。");
 
 //				mSearchList.clear();
 //				for(int i=0;i<mmResult.size();i++){
